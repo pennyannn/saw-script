@@ -79,6 +79,7 @@ data TValue l
   = VVecType !Natural !(TValue l)
   | VBoolType
   | VIntType
+  | VStringType
   | VIntModType !Natural
   | VArrayType !(TValue l) !(TValue l)
   | VPiType LocalName !(TValue l) !(PiBody l)
@@ -214,6 +215,7 @@ instance Show (Extra l) => Show (TValue l) where
     case v of
       VBoolType      -> showString "Bool"
       VIntType       -> showString "Integer"
+      VStringType    -> showString "String"
       VIntModType n  -> showParen True (showString "IntMod " . shows n)
       VArrayType{}   -> showString "Array"
       VPiType _ t _    -> showParen True
@@ -343,6 +345,7 @@ asFirstOrderTypeTValue v =
     VSort{}     -> Nothing
     VRecursorType{} -> Nothing
     VTyTerm{}   -> Nothing
+    VStringType -> Nothing
 
 -- | A (partial) injective mapping from type values to strings. These
 -- are intended to be useful as suffixes for names of type instances
@@ -371,6 +374,7 @@ suffixTValue tv =
     VSort {} -> Nothing
     VRecursorType{} -> Nothing
     VTyTerm{} -> Nothing
+    VStringType -> Nothing
 
 
 neutralToTerm :: NeutralTerm -> Term

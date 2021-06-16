@@ -903,6 +903,7 @@ primitive expByNat : (a:sort 0) -> a -> (a -> a -> a) -> a -> Nat -> a;
 
 primitive equalString : String -> String -> Bool;
 
+primitive appendString : String -> String -> String;
 
 --------------------------------------------------------------------------------
 -- "Vec n a" is an array of n elements, each with type "a".
@@ -912,6 +913,9 @@ primitive Vec : Nat -> sort 0 -> sort 0;
 primitive gen : (n : Nat) -> (a : sort 0) -> (Nat -> a) -> Vec n a;
 
 primitive atWithDefault : (n : Nat) -> (a : sort 0) -> a -> Vec n a -> Nat -> a;
+
+-- Convert a Cryptol string (a sequence of 8-bit ASCII characters) to a SAWCore String.
+primitive bytesToString : (n : Nat) -> Vec n (Vec 8 Bool) -> String;
 
 at : (n : Nat) -> (a : sort 0) -> Vec n a -> Nat -> a;
 at n a v i = atWithDefault n a (error a "at: index out of bounds") v i;
@@ -1620,7 +1624,7 @@ genBVVec : (n : Nat) -> (len : Vec n Bool) -> (a : sort 0) ->
            BVVec n len a;
 genBVVec n len a f =
   genWithProof (bvToNat n len) a
-    (\(i:Nat) (pf:IsLtNat i (bvToNat n len)) -> 
+    (\(i:Nat) (pf:IsLtNat i (bvToNat n len)) ->
       f (bvNat n i) (IsLtNat_to_bvult n len i pf));
 
 -- Ex Falso Quodlibet: if True = False then anything is possible

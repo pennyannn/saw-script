@@ -1570,6 +1570,7 @@ asCryptolTypeValue v =
   case v of
     SC.VBoolType -> return (Right C.tBit)
     SC.VIntType -> return (Right C.tInteger)
+    SC.VStringType -> Nothing
     SC.VIntModType n -> return (Right (C.tIntMod (C.tNum n)))
     SC.VArrayType v1 v2 -> do
       Right t1 <- asCryptolTypeValue v1
