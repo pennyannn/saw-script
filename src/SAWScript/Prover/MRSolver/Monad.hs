@@ -93,7 +93,7 @@ pattern TermsNotEq t1 t2 = TermsNotRel False t1 t2
 pattern TypesNotEq :: Type -> Type -> MRFailure
 pattern TypesNotEq t1 t2 = TypesNotRel False t1 t2
 
--- | Remove the context from a 'MRFailure', i.e. remove all applications of the 
+-- | Remove the context from a 'MRFailure', i.e. remove all applications of the
 -- 'MRFailureLocalVar' and 'MRFailureCtx' constructors
 mrFailureWithoutCtx :: MRFailure -> MRFailure
 mrFailureWithoutCtx (MRFailureLocalVar x err) =
@@ -267,7 +267,7 @@ coIndHypWithVar (CoIndHyp ctx f1 f2 args1 args2 invar1 invar2) nm (Type tp) =
   do var <- liftSC1 scLocalVar 0
      (args1', args2') <- liftTermLike 0 1 (args1, args2)
      return (CoIndHyp (ctx ++ [(nm,tp)]) f1 f2 args1' args2' invar1 invar2, var)
-  
+
 -- | A map from pairs of function names to co-inductive hypotheses over those
 -- names
 type CoIndHyps = Map (FunName, FunName) CoIndHyp
@@ -293,7 +293,7 @@ data DataTypeAssump
   deriving (Generic, Show, TermLike)
 
 instance PrettyInCtx DataTypeAssump where
-  prettyInCtx (IsLeft  x) = prettyInCtx x >>= ppWithPrefix "Left _ _" 
+  prettyInCtx (IsLeft  x) = prettyInCtx x >>= ppWithPrefix "Left _ _"
   prettyInCtx (IsRight x) = prettyInCtx x >>= ppWithPrefix "Right _ _"
   prettyInCtx (IsNum   x) = prettyInCtx x >>= ppWithPrefix "TCNum"
   prettyInCtx IsInf = return "TCInf"
@@ -536,14 +536,14 @@ mrErrorTerm a str =
      liftSC2 scGlobalApply "Prelude.error" [a, err_str]
 
 -- | Create a term representing an application of @Prelude.genBVVecFromVec@,
--- where the default value argument is @Prelude.error@ of the given 'T.Text' 
+-- where the default value argument is @Prelude.error@ of the given 'T.Text'
 mrGenBVVecFromVec :: Term -> Term -> Term -> T.Text -> Term -> Term -> MRM Term
 mrGenBVVecFromVec m a v def_err_str n len =
   do err_tm <- mrErrorTerm a def_err_str
      liftSC2 scGlobalApply "Prelude.genBVVecFromVec" [m, a, v, err_tm, n, len]
 
 -- | Create a term representing an application of @Prelude.genFromBVVec@,
--- where the default value argument is @Prelude.error@ of the given 'T.Text' 
+-- where the default value argument is @Prelude.error@ of the given 'T.Text'
 mrGenFromBVVec :: Term -> Term -> Term -> Term -> T.Text -> Term -> MRM Term
 mrGenFromBVVec n len a v def_err_str m =
   do err_tm <- mrErrorTerm a def_err_str
@@ -675,7 +675,9 @@ mrLambdaLift ctx t f =
 -- variable, which is passed as a 'Term' to the sub-computation. Note that any
 -- assumptions made in the sub-computation will be lost when it completes.
 withUVar :: LocalName -> Type -> (Term -> MRM a) -> MRM a
-withUVar nm (Type tp) m = withUVars [(nm,tp)] (\[v] -> m v)
+withUVar nm (Type tp) m = withUVars [(nm,tp)] $ \case
+  [v] -> m v
+  _   -> error "withUVar: impossible"
 
 -- | Run a MR Solver computation in a context extended with a universal variable
 -- and pass it the lifting (in the sense of 'incVars') of an MR Solver term
