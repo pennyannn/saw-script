@@ -1,0 +1,66 @@
+enable_experimental;
+
+import "Mix.cry";
+let arrayRangeEq = parse_core "arrayRangeEq 64 (Vec 8 Bool)";
+
+m <- llvm_load_module "test.bc";
+
+let i8 = llvm_int 8;
+let i32 = llvm_int 32;
+
+let alloc_init_readonly ty v = do {
+  p <- llvm_alloc_readonly ty;
+  crucible_points_to p v;
+  return p;
+};
+
+let ptr_to_fresh_readonly n ty = do {
+  x <- crucible_fresh_var n ty;
+  p <- alloc_init_readonly ty (crucible_term x);
+  return (x, p);
+};
+
+let mix_spec len res_block_len range_eq_len = do {
+  block <- crucible_fresh_cryptol_var "block" {| ByteArray |};
+  block_ptr <- llvm_symbolic_alloc false 1 {{ 128:[64] }};
+  crucible_points_to_array_prefix block_ptr block {{ 128:[64] }};
+
+  (data, data_ptr) <- ptr_to_fresh_readonly "data" (llvm_array len i8);
+
+  n <- crucible_fresh_var "n" i32;
+  crucible_precond({{ n < 128 }});
+
+  crucible_execute_func [block_ptr, (crucible_term n), data_ptr, (crucible_term {{ `len : [64] }})];
+
+  let res = {{ mix block (0 # n) data }};
+  res_block <- crucible_fresh_cryptol_var "res_block" {| ByteArray |};
+  crucible_points_to_array_prefix block_ptr res_block {{ `res_block_len:[64] }};
+  crucible_postcond {{ arrayRangeEq res_block 0 res 0 `range_eq_len }};
+
+  crucible_return (crucible_term {{ 1 : [32]}});
+};
+
+crucible_llvm_verify m "mix"
+  []
+  true
+  (mix_spec 1 128 128)
+  (do {
+    w4_unint_z3 [];
+  });
+
+crucible_llvm_verify m "mix"
+  []
+  true
+  (mix_spec 1 0 0)
+  (do {
+    w4_unint_z3 [];
+  });
+
+fails (crucible_llvm_verify m "mix"
+  []
+  true
+  (mix_spec 1 129 0)
+  (do {
+    w4_unint_z3 [];
+  }));
+
